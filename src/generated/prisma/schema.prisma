@@ -1,0 +1,150 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id           String   @id @default(uuid())
+  name         String
+  email        String   @unique
+  password     String
+  role         Role
+  isActive     Boolean  @default(true)
+  refreshToken String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  doctorProfile       DoctorProfile?
+  patientProfile      PatientProfile?
+  timeSlots           TimeSlot[]
+  patientAppointments Appointment[]   @relation("PatientAppointments")
+  doctorAppointments  Appointment[]   @relation("DoctorAppointments")
+}
+
+model DoctorProfile {
+  id     String @id @default(uuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  specializations String[] @default([])
+  experience      Int      @default(0) // years of experience
+  qualifications  String[] @default([])
+  bio             String?
+  phone           String?
+  consultationFee Float?
+  availableFrom   String? // e.g. "09:00"
+  availableTo     String? // e.g. "17:00"
+
+  approvalStatus  DoctorApprovalStatus @default(PENDING)
+  rejectionReason String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PatientProfile {
+  id     String @id @default(uuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  dateOfBirth      DateTime?
+  gender           Gender?
+  bloodGroup       String?
+  phone            String?
+  address          String?
+  emergencyContact String?
+  allergies        String[]  @default([])
+  medicalHistory   String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum Role {
+  PATIENT
+  DOCTOR
+  ADMIN
+}
+
+enum DoctorApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+model TimeSlot {
+  id        String  @id @default(uuid())
+  doctorId  String
+  doctor    User    @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  date      String // "YYYY-MM-DD"
+  startTime String // "HH:mm"
+  endTime   String // "HH:mm"
+  isBooked  Boolean @default(false)
+
+  appointment Appointment?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([doctorId, date, startTime])
+}
+
+model Appointment {
+  id         String   @id @default(uuid())
+  timeSlotId String   @unique
+  timeSlot   TimeSlot @relation(fields: [timeSlotId], references: [id], onDelete: Cascade)
+
+  patientId String
+  patient   User   @relation("PatientAppointments", fields: [patientId], references: [id], onDelete: Cascade)
+
+  doctorId String
+  doctor   User   @relation("DoctorAppointments", fields: [doctorId], references: [id], onDelete: Cascade)
+
+  // Payment
+  paymentStatus PaymentStatus @default(PENDING)
+  paymentId     String? // mock payment transaction ID
+  amount        Float
+
+  // Agora Video Call
+  channelName String     @unique
+  callStatus  CallStatus @default(SCHEDULED)
+
+  status AppointmentStatus @default(CONFIRMED)
+  notes  String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum AppointmentStatus {
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  REFUNDED
+}
+
+enum CallStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+}
