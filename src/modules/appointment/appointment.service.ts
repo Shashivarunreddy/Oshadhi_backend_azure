@@ -86,7 +86,7 @@ export const bookAppointment = async (
   const consultationFee = slot.doctor.doctorProfile?.consultationFee ?? 0;
   const mockPaymentId = generateMockPaymentId();
 
-  const appointment = await prisma.$transaction(async (tx) => {
+  const appointment = await prisma.$transaction(async (tx: any) => {
     // Atomic check-and-mark: only succeeds if the slot is STILL unbooked.
     // This eliminates the read-then-write race condition where two concurrent
     // requests both read isBooked=false and both proceed to create an appointment.

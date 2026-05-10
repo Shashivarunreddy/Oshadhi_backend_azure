@@ -118,7 +118,7 @@ export const getAllDoctors = async () => {
     },
   });
 
-  return doctors.map(doctor => {
+  return doctors.map((doctor: any) => {
     const { doctorProfile, ...user } = doctor;
     return {
       user,
@@ -164,7 +164,7 @@ export const createDailyTimeSlots = async (userId: string, data: CreateTimeSlots
     doctorId: userId
   }));
   
-  await prisma.$transaction(async (tx) => {
+  await prisma.$transaction(async (tx: any) => {
     // Delete unbooked slots for this date
     await tx.timeSlot.deleteMany({
       where: {
